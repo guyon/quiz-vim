@@ -112,7 +112,9 @@ function! s:getQuiz(quiz_count)
     let url = 'http://quizken.jp/api/quiz-index/api_key/ma6/count/' . a:quiz_count
     let res = s:doHttp(url, {}, {}, {}, 0)
     try
+        setlocal encoding=utf-8
         return eval(iconv(res, "utf-8", &encoding))
+        setlocal encoding=cp932
     catch
         return {}
     endtry
