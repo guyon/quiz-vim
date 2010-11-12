@@ -78,46 +78,14 @@ function! s:item2query(items, sep)
     return ret
 endfunction
 
-function! s:doHttp(url, getdata, postdata, cookie, returnheader)
-    let url = a:url
-    let getdata = s:item2query(a:getdata, '&')
-    let postdata = s:item2query(a:postdata, '&')
-    let cookie = s:item2query(a:cookie, '; ')
-    if strlen(getdata)
-        let url .= "?" . getdata
-    endif
-    let command = "curl -s -k"
-    if a:returnheader
-        let command .= " -i"
-    endif
-    if strlen(cookie)
-        let command .= " -H \"Cookie: " . cookie . "\""
-    endif
-    let command .= " \"" . url . "\""
-    if strlen(postdata)
-        let file = tempname()
-        exec 'redir! > '.file
-        silent echo postdata
-        redir END
-        let quote = &shellxquote == '"' ?  "'" : '"'
-        let res = system(command . " -d @" . quote.file.quote)
-        call delete(file)
-    else
-        let res = system(command)
-    endif
-    return res
-endfunction
-
 function! s:getQuiz(quiz_count)
     let url = 'http://quizken.jp/api/quiz-index/api_key/ma6/count/' . a:quiz_count
-    let res = s:doHttp(url, {}, {}, {}, 0)
-    try
-        setlocal encoding=utf-8
-        return eval(iconv(res, "utf-8", &encoding))
-        setlocal encoding=cp932
-    catch
-        return {}
-    endtry
+    let quote = &shellxquote == '"' ?  "'" : '"'
+    let json = system("curl -L -s ".quote.url.quote)
+    let json = iconv(json, "utf-8", &encoding)
+    let json = substitute(json, '\\u\(\x\x\x\x\)', '\=s:nr2enc_char("0x".submatch(1))', 'g')
+    let [null,true,false] = [0,1,0]
+    return eval(json)
 endfunction
 
 function! s:startQuiz(res)
